@@ -39,19 +39,18 @@ create or replace procedure my_new_goods_proc
 (
     p_inputnum in inputTable.inputnum%type,
     p_goodsnum in inputTable.goodsnum%type,
-    p_inputcount in inputtable.inputcount%type,
-    p_inputdate in inputtable.inputdate%type
+    p_inputcount in inputtable.inputcount%type
 )
 is
     
 begin
-    insert into inputTable values (p_inputnum, p_goodsnum, p_inputcount, p_inputdate);
+    insert into inputTable values (p_inputnum, p_goodsnum, p_inputcount, sysdate);
     update stock set stock.stockcount = stock.stockcount + p_inputcount
     where p_goodsnum = goodsnum;
     commit;
 end;
 
-exec my_new_goods_proc ('i10004', 'g00002', 30);
+exec my_new_goods_proc ('i10004', 'g00003', 30);
 select * from inputtable;
 
 -- 6번
@@ -83,20 +82,46 @@ from stock
 where stockcount in (select max(stockcount) from stock);
 
 -- 9번
-select a.goodsname, count(a.goodsnum) AS suminputcnt
-from stock a
-where count(goodsnum = (select max(count(goodsnum))
-                from inputtable
-                group by goodsnum)
-having a.goodsname;
 
+select a.goodsname, count(b.goodsnum)
+from stock a, inputtable b
+where a.goodsnum = b.goodsnum
+group by a.goodsname
+having count(b.goodsnum) = (select max(count(goodsnum)) from inputtable group by goodsnum);
 
-        
 -- 10번
+insert into inputtable values ('i10005', 'g00004', 40, '2017/04/09');
+insert into inputtable values ('i10006', 'g00004', 40, '2017/04/09');
+
 select a.goodsname
-from stock a
-where goodsname = (select substr(b.inputdate, 1, 2)
-        from inputtable b
-        where a.goodsnum = b.goodsnum);
+from stock a, inputtable b
+where b.goodsnum = a.goodsnum
+and b.inputdate like '2017%';
         
 -- 11번
+insert into outputtable values('o10001', 'g00001', 30, '2019/04/09');
+insert into outputtable values('o10002', 'g00002', 50, '2019/04/09');
+insert into outputtable values('o10003', 'g00002', 50, '2019/04/10');
+insert into outputtable values('o10004', 'g00001', 50, '2020/01/10');
+
+-- 11-1
+
+select b.outputdate, a.goodsname, sum(b.outputcount)
+from stock a, outputtable b
+where a.goodsnum = b.goodsnum
+group by b.outputdate, a.goodsname
+order by outputdate;
+
+-- 11-2 goodsname별 총합
+select a.goodsname, sum(b.outputcount)
+from stock a, outputtable b
+where a.goodsnum = b.goodsnum
+group by a.goodsname;
+
+-- 11-3 연도 중복0, goodsname 중복x ex) 2019 시계 
+select SUBSTR(a.outputdate, 1, 4) as years, b.goodsname, sum(a.outputcount) as outputcnt
+from outputtable a, stock b
+where a.goodsnum = b.goodsnum
+group by SUBSTR(a.outputdate, 1, 4), b.goodsname;
+
+select * from outputtable;
