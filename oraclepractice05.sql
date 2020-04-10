@@ -125,3 +125,43 @@ where a.goodsnum = b.goodsnum
 group by SUBSTR(a.outputdate, 1, 4), b.goodsname;
 
 select * from outputtable;
+
+-- 12 ¹ø
+create or replace function manager_name_fuc (p_manager_id number)
+return varchar
+is manager_name employees.emp_name%type;
+begin
+    select emp_name
+    into manager_name
+    from employees
+    where employee_id = p_manager_id;
+    
+    return manager_name;
+end;
+
+select emp_name, manager_name_fuc(124) from employees;
+
+-- 13¹ø
+create table employees2 as 
+select *
+from employees
+where 1 = 2; 
+
+drop table employees2;
+
+select * from employees2;
+
+--14¹ø
+create or replace procedure employee_proc
+is
+begin
+
+    insert into employees2 select *
+    from employees
+    where employees.salary >= 3000;
+        
+end;
+
+exec employee_proc
+
+select * from employees2;
